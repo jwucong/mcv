@@ -1,21 +1,30 @@
 <template>
   <div class="home">
-		<richtext-editor></richtext-editor>
+		<richtext-editor v-model="content" :config="config"></richtext-editor>
   </div>
 </template>
 
 <script>
 	import RichtextEditor from '@/components/RichtextEditor'
+	import loadsh from 'lodash'
 
-export default {
+	import {copy, isEqual} from "../utils";
+
+	export default {
   name: 'home',
   components: {
 		RichtextEditor
   },
 	data() {
   	return {
-  		content: '',
+  		content: 'tesla',
+			config: {
+  			toolbar: ''
+			}
 		}
+	},
+	mounted() {
+
 	}
 }
 </script>
