@@ -1,9 +1,6 @@
 <template>
 	<div class="richtext-editor">
-		<editor
-			v-bind="editorProps"
-			v-on="$listeners">
-		</editor>
+		<editor v-bind="editorProps" v-on="$listeners" />
 	</div>
 </template>
 
@@ -22,7 +19,6 @@
 	import 'tinymce/plugins/charmap'
 	import 'tinymce/plugins/emoticons'
 	import 'tinymce/plugins/advlist'
-	// import '../assets/tinymce/plugins/imageUpload'
 	import Editor from '@tinymce/tinymce-vue'
 	import defaultEditorConfig from './defaultEditorConfig'
 	import imageUploadHandler from './imageUploadHandler'

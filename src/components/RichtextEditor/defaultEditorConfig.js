@@ -18,10 +18,45 @@ export default {
 		headers: {
 			UBToken: 'kQa2NQnoOTnEYSjyDr3YbQVitvcWFn1G'
 		},
+		timeout: 0,
 		withCredentials: false,
-		uploadBefore: null,
-		uploadSuccess: null,
-		uploadError: null,
+		fileValidator: function(blobInfo) {
+			console.group('fileValidator')
+			console.log('blobInfo: ', blobInfo)
+			console.groupEnd()
+			const accept = /^image\/(jpe?g|png|gif)$/i
+			const file = blobInfo.blob()
+			return accept.test(file.type)
+		},
+		uploadBefore: function (formData, xhr) {
+			console.group('uploadBefore')
+			console.log('formData: ', formData)
+			console.log('xhr: ', xhr)
+			console.groupEnd()
+		},
+		uploadAfter: function(xhr, cancel) {
+			console.group('uploadAfter')
+			console.log('xhr: ', xhr)
+			console.log('cancel: ', cancel)
+			console.groupEnd()
+		},
+		uploadSuccess: function (data, xhr) {
+			console.group('uploadSuccess')
+			console.log('data: ', data)
+			console.log('xhr: ', xhr)
+			console.groupEnd()
+		},
+		uploadError: function (data, xhr) {
+			console.group('uploadError')
+			console.log('data: ', data)
+			console.log('xhr: ', xhr)
+			console.groupEnd()
+		},
+		uploadComplete: function (xhr) {
+			console.group('uploadComplete')
+			console.log('xhr: ', xhr)
+			console.groupEnd()
+		},
 	},
 	toolbar: [
 		'fontselect fontsizeselect',
