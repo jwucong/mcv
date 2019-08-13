@@ -19,7 +19,7 @@
   	return {
   		content: 'tesla',
 			config: {
-  			toolbar: ''
+
 			}
 		}
 	},
