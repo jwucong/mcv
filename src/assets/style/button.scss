@@ -1,0 +1,32 @@
+
+.um-wx-btn {
+	position: relative;
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 8px 24px;
+	border: 0;
+	border-radius: 4px;
+	line-height: 24px;
+	font-weight: 700;
+	font-size: 17px;
+	text-align: center;
+	text-decoration: none;
+	color: #fff;
+	background-color: #F2F2F2;
+	overflow: hidden;
+	@extend %unselect;
+	@include setTapColor();
+	&.primary {
+		background-color: #07C160;
+	}
+	&:not(.disabled):active {
+		// active效果需要配合一个空的touchstart事件
+		// <body ontouchstart="">
+		// 或者
+		// document.addEventListener('touchstart', function () {}, false)
+		background-color: #06AD56;
+	}
+}

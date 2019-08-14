@@ -1,17 +1,8 @@
 @import "mixin";
-
-.arrow-up {
-	@include arrow(top, 50, green)
-}
-
-.arrow-right {
-	@include arrow(right, 50, green)
-}
-
-.rows1 {
-	@include rows(1)
-}
-
-.rows3 {
-	@include rows(3)
-}
+@import "button";
+//
+//a, a:hover, a:active, a:visited, a:link, a:focus {
+//	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+//	outline: none;
+//	text-decoration: none;
+//}

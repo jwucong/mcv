@@ -1,6 +1,6 @@
 <template>
 	<div class="com-richtext-editor">
-		<editor v-model="content" v-bind="editorProps" v-on="$listeners" />
+		<editor v-model="content" v-bind="props" v-on="$listeners" />
 	</div>
 </template>
 
@@ -50,7 +50,7 @@ export default {
 		}
 	},
 	computed: {
-		editorProps() {
+		props() {
 			const config = this.config || {};
 			const init = Object.assign(defaultConfig, config);
 			return {
@@ -72,7 +72,9 @@ export default {
 				return this.value;
 			},
 			set(value) {
-				this.$emit('input', value);
+				if(value !== this.value) {
+					this.$emit('input', value);
+				}
 			}
 		}
 	}
