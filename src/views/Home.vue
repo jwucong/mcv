@@ -1,30 +1,25 @@
 <template>
-  <div class="home">
-		<richtext-editor v-model="content" :config="config"></richtext-editor>
-  </div>
+	<div class="home">
+		<richtext-editor v-model="content"></richtext-editor>
+		<scss-test></scss-test>
+	</div>
 </template>
 
 <script>
-	import RichtextEditor from '@/components/RichtextEditor'
-	import loadsh from 'lodash'
+import RichtextEditor from '@/components/RichtextEditor';
+import ScssTest from './ScssTest';
 
-	import {copy, isEqual} from "../utils";
-
-	export default {
-  name: 'home',
-  components: {
-		RichtextEditor
-  },
-	data() {
-  	return {
-  		content: 'tesla',
-			config: {
-
-			}
-		}
+export default {
+	name: 'home',
+	components: {
+		RichtextEditor,
+		ScssTest
 	},
-	mounted() {
-
-	}
-}
+	data() {
+		return {
+			content: '<div style="font-size: 24px;">tesla13</div>'
+		};
+	},
+	mounted() {}
+};
 </script>

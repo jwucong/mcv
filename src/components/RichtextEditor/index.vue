@@ -1,84 +1,89 @@
 <template>
-	<div class="richtext-editor">
-		<editor v-bind="editorProps" v-on="$listeners" />
+	<div class="com-richtext-editor">
+		<editor v-model="content" v-bind="editorProps" v-on="$listeners" />
 	</div>
 </template>
 
 <script>
-	import 'tinymce/tinymce'
-	import 'tinymce/themes/silver'
-	import 'tinymce/plugins/preview'
-	import 'tinymce/plugins/link'
-	import 'tinymce/plugins/image'
-	import 'tinymce/plugins/media'
-	import 'tinymce/plugins/lists'
-	import 'tinymce/plugins/hr'
-	import 'tinymce/plugins/code'
-	import 'tinymce/plugins/table'
-	import 'tinymce/plugins/fullscreen'
-	import 'tinymce/plugins/charmap'
-	import 'tinymce/plugins/emoticons'
-	import 'tinymce/plugins/advlist'
-	import Editor from '@tinymce/tinymce-vue'
-	import defaultEditorConfig from './defaultEditorConfig'
-	import imageUploadHandler from './imageUploadHandler'
+import 'tinymce/tinymce';
+import 'tinymce/themes/silver';
+import 'tinymce/plugins/preview';
+import 'tinymce/plugins/link';
+import 'tinymce/plugins/image';
+import 'tinymce/plugins/media';
+import 'tinymce/plugins/lists';
+import 'tinymce/plugins/hr';
+import 'tinymce/plugins/code';
+import 'tinymce/plugins/table';
+import 'tinymce/plugins/fullscreen';
+import 'tinymce/plugins/charmap';
+import 'tinymce/plugins/emoticons';
+import 'tinymce/plugins/advlist';
+import Editor from '@tinymce/tinymce-vue';
+import defaultConfig from './defaultConfig';
+import imageUploadHandler from './imageUploadHandler';
 
-	const normalizaConfig = (ctx, config) => {
-		const imageUploader = config.imageUploader || {}
-		config.images_upload_url = imageUploader.url || null
-		config.images_upload_handler = imageUploadHandler(imageUploader)
-		return config
-	}
+const normalizaConfig = config => {
+	const imageUploader = config.imageUploader || {};
+	const customHandler = imageUploader.customUploadHandler;
+	const custom = typeof customHandler === 'function';
+	const handler = custom ? customHandler : imageUploadHandler(imageUploader);
+	config.images_upload_url = imageUploader.url;
+	config.images_upload_credentials = imageUploader.withCredentials;
+	config.images_upload_handler = handler;
+	return config;
+};
 
-	export default {
-		name: 'RichtextEditor',
-		components: {Editor},
-		props: {
-			config: {
-				type: Object,
-				default: () => ({})
-			}
+export default {
+	name: 'RichtextEditor',
+	components: {
+		Editor
+	},
+	props: {
+		value: {
+			type: String,
+			default: ''
 		},
-		computed: {
-			editorProps() {
-				const config = this.config || {}
-				const {
-					disabled,
-					id,
-					initialValue,
-					inline,
-					tagName,
-					plugins,
-					toolbar,
-					modelEvents,
-					apiKey,
-					cloudChannel
-				} = config
-				const init = Object.assign(defaultEditorConfig, config)
-				normalizaConfig(this, init)
-				return {
-					init,
-					disabled,
-					id,
-					initialValue,
-					inline,
-					tagName,
-					plugins,
-					toolbar,
-					modelEvents,
-					apiKey,
-					cloudChannel
-				}
+		config: {
+			type: Object,
+			default: () => ({})
+		}
+	},
+	computed: {
+		editorProps() {
+			const config = this.config || {};
+			const init = Object.assign(defaultConfig, config);
+			return {
+				init: normalizaConfig(init),
+				disabled: config.disabled,
+				id: config.id,
+				initialValue: config.initialValue,
+				inline: config.inline,
+				tagName: config.tagName,
+				plugins: config.plugins,
+				toolbar: config.toolbar,
+				modelEvents: config.modelEvents,
+				apiKey: config.apiKey,
+				cloudChannel: config.cloudChannel
+			};
+		},
+		content: {
+			get() {
+				return this.value;
+			},
+			set(value) {
+				this.$emit('input', value);
 			}
 		}
 	}
+};
 </script>
 
-<style lang="scss" scoped>
-	.richtext-editor {
-		position: relative;
-		display: block;
-		box-sizing: border-box;
-		width: 100%;
-	}
+<style lang="scss">
+.com-richtext-editor {
+	position: relative;
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+}
 </style>

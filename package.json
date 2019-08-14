@@ -5,7 +5,9 @@
   "scripts": {
     "start": "npm run serve",
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "format": "prettier --write src/**/*.js src/**/*.vue",
+    "pre-commit": "npm run format && git add -u"
   },
   "dependencies": {
     "@tinymce/tinymce-vue": "^2.1.0",
@@ -18,7 +20,9 @@
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.10.0",
     "@vue/cli-service": "^3.10.0",
+    "husky": "^3.0.3",
     "node-sass": "^4.12.0",
+    "prettier": "^1.18.2",
     "sass-loader": "^7.1.0",
     "vue-template-compiler": "^2.6.10"
   }

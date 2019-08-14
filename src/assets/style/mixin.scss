@@ -1,0 +1,45 @@
+
+@mixin setTapColor($color: transparent) {
+	-webkit-tap-highlight-color: $color;
+}
+
+@mixin rows($rows: 1) {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	@if $rows > 1 {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: $rows;
+	} @else {
+		white-space: nowrap;
+	}
+}
+
+@mixin arrow($direction, $size, $color: '#000') {
+	position: relative;
+	display: inline-block;
+	height: 0;
+	width: 0;
+	@if $direction == top {
+		border-left: $size / 2 + px solid transparent;
+		border-right: $size / 2 + px solid transparent;
+		border-bottom: $size + px solid $color;
+	}
+	@if $direction == right {
+		border-left: $size + px solid $color;
+		border-top: $size / 2 + px solid transparent;
+		border-bottom: $size / 2 + px solid transparent;
+	}
+	@if $direction == bottom {
+		//transform: matrix(-0.71, 0.71, -0.71, -0.71, 0, 0);
+		//top: -3px;
+	}
+	@if $direction == left {
+		//transform: matrix(-0.71, -0.71, 0.71, -0.71, 0, 0);
+		//top: -2px;
+	}
+}
+
+
+
+

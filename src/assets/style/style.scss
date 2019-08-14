@@ -1,0 +1,17 @@
+@import "mixin";
+
+.arrow-up {
+	@include arrow(top, 50, green)
+}
+
+.arrow-right {
+	@include arrow(right, 50, green)
+}
+
+.rows1 {
+	@include rows(1)
+}
+
+.rows3 {
+	@include rows(3)
+}
