@@ -1,7 +1,7 @@
 <template>
 	<div class="home">
-<!--		<richtext-editor v-model="content"></richtext-editor>-->
-<!--		<scss-test></scss-test>-->
+		<!--		<richtext-editor v-model="content"></richtext-editor>-->
+		<!--		<scss-test></scss-test>-->
 		<a class="um-wx-btn primary" href="javascript:;">button</a>
 	</div>
 </template>
@@ -24,14 +24,12 @@ export default {
 	mounted() {},
 	methods: {
 		btnClick(e) {
-			e.preventDefault()
+			e.preventDefault();
 		}
 	}
 };
 </script>
 
 <style lang="scss">
-
-	@import "../assets/style/style";
-
+@import '../assets/style/style';
 </style>
