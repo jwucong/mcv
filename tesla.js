@@ -1,15 +1,13 @@
-const props = {
-	a: 1,
-	init: {
-		nihao: 2
+function getCompressorOptions(options) {
+	const defaults = {
+		width: '100%',     // auto or percentage or pixel
+		height: 'auto',    // auto or percentage or pixel
+		quality: 75,       // 0 - 100
+		maxSize: '',       // 1Mb
+		output: 'blob'     // blob or base64
 	}
+	const conf = Object.assign({}, defaults, options)
+	return conf
 }
-const init = Object.assign({
-	base_url: '/plugins/tinymce',
-	language: 'zh_CN',
-	branding: false,
-	resize: false,
-}, props.init || {})
-const f = Object.assign({}, props, {init})
 
-console.log(f)
+console.log(getCompressorOptions(1))
