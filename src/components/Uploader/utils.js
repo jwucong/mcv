@@ -1,11 +1,3 @@
-// getPower('kb') => 1
-import {is, isEmptyValue} from "@/utils";
-
-const isPercent = val => /\%$/.test(val)
-
-const isPlainObject = value => {
-	return is(value, 'object') && Object.keys(value).length === 0
-}
 
 const getPower = unit => {
 	const units = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y', 'B', 'N', 'D'];
@@ -21,8 +13,8 @@ const getPower = unit => {
 }
 
 const toBytes = size => {
-	const pattern = /^\s*\+?((?:\.\d+)|(?:\d+(?:\.\d+)?))\s*([a-z]*)\s*$/i;
-	const p = pattern.exec(size)
+	const reg = /^\s*\+?((?:\.\d+)|(?:\d+(?:\.\d+)?))\s*([a-z]*)\s*$/i;
+	const p = reg.exec(size)
 	if (!p) {
 		return NaN
 	}
@@ -32,6 +24,16 @@ const toBytes = size => {
 		return NaN
 	}
 	return Math.ceil(value * Math.pow(1024, power))
+}
+
+const formatBytes = bytes => {
+	if (Number.isNaN(parseInt(bytes)) || bytes < 0) {
+		return NaN
+	}
+	const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'BB', 'NB', 'DB']
+	const e = Math.floor(Math.log(bytes) / Math.log(1024))
+	const size = Math.ceil(bytes / Math.pow(1024, e))
+	return e < units.length ? size + units[e] : NaN
 }
 
 const base64ToArrayBuffer = base64 => {
@@ -44,6 +46,14 @@ const base64ToArrayBuffer = base64 => {
 		view[i] = binary.charCodeAt(i);
 	}
 	return buffer;
+}
+
+const blobToBase64 = (blob, callback) => {
+	const reader = new FileReader(blob)
+	reader.onload = function () {
+		callback(this.result)
+	}
+	reader.readAsDataURL(file)
 }
 
 const getOrientation = buffer => {
@@ -83,9 +93,10 @@ const getOrientation = buffer => {
 	return -1;
 }
 
-const fixOrientation = (canvas, ctx, orientation) => {
+const fixOrientation = (canvas, orientation) => {
 	const width = canvas.width
 	const height = canvas.height
+	const ctx = canvas.getContext('2d')
 	if (orientation > 4) {
 		canvas.width = height
 		canvas.height = width
@@ -117,172 +128,238 @@ const fixOrientation = (canvas, ctx, orientation) => {
 	}
 }
 
-const normalizeCompressorConfig = config => {
-	const parse = value => {
-		if (/\d+\s*(px)\s*$/i.test(value)) {
-			return parseInt(value, 10) || '100%'
-		}
-		if (/\d+\s*\%\s*$/i.test(value)) {
-			return parseFloat(value) + '%' || '100%'
-		}
-		return value === 'auto' ? value : '100%'
+function getCompressorOptions(image, options) {
+	const w0 = image.naturalWidth
+	const h0 = image.naturalHeight
+	const r0 = w0 / h0
+	const defaults = {
+		width: '100%',     // auto or percentage or number
+		height: 'auto',    // auto or percentage or number
+		minWidth: '60%',
+		minHeight: 'auto',
+		quality: 75,       // 0 - 100
+		minQuality: 60,       // 0 - 100
+		error: '15kb',
+		maxSize: null,     // 1Mb
+		output: 'base64'   // blob or base64
 	}
-	let width = parse(config.width)
-	let height = parse(config.height)
-	let q = parse(config.quality)
+	const pattern = /^\+?((?:\.\d+)|(?:\d+(?:\.\d+)?))\s*\%$/i
+	const conf = Object.assign({}, defaults, options)
+	const maxSize = toBytes(conf.maxSize) || null
+	let quality = parseFloat(conf.quality) || defaults.quality
+	let mq = parseFloat(conf.minQuality) || defaults.minQuality
+	let output = 'base64'
+	quality = (quality < 0 ? 0 : (quality > 100 ? 100 : quality)) / 100
+	mq = (mq < 0 ? 0 : (mq > 100 ? 100 : mq)) / 100
+	if (typeof conf.output === 'string' && conf.output.trim() === 'blob') {
+		output = 'blob'
+	}
+	const formatter = (val, defaultVal) => {
+		let float = parseFloat(val)
+		if (!float) {
+			return 'auto'
+		}
+		if (pattern.test(val)) {
+			return (float < 0 ? 0 : (float > 100 ? 100 : float)) + '%'
+		}
+		return float
+	}
+	let width = formatter(conf.width)
+	let height = formatter(conf.height)
+	let minWidth = formatter(conf.minWidth)
+	let minHeight = formatter(conf.minHeight)
 	if (width === 'auto' && height === 'auto') {
 		width = '100%'
 	}
-	const quality = q === 'auto' ? 75 : (isPercent(q) ? parseFloat(q) : q)
-	const maxSize = toBytes(config.maxSize) || null
-	const output = config.output === 'blob' ? 'blob' : 'base64'
-	return {width, height, quality, maxSize, output}
+	if (minWidth === 'auto' && minHeight === 'auto') {
+		minWidth = '60%'
+	}
+	if (pattern.test(width)) {
+		width = parseFloat(width) * w0 / 100
+	}
+	if (pattern.test(height)) {
+		height = parseFloat(height) * h0 / 100
+	}
+	if (width === 'auto') {
+		width = height * r0
+	}
+	if (height === 'auto') {
+		height = width / r0
+	}
+	if (pattern.test(minWidth)) {
+		minWidth = parseFloat(minWidth) * w0 / 100
+	}
+	if (pattern.test(minHeight)) {
+		minHeight = parseFloat(minHeight) * h0 / 100
+	}
+	if (minWidth === 'auto') {
+		minWidth = minHeight * r0
+	}
+	if (minHeight === 'auto') {
+		minHeight = minWidth / r0
+	}
+	const int = value => parseInt(value, 10)
+	return {
+		quality,
+		output,
+		maxSize,
+		minQuality: mq,
+		error: toBytes(conf.error) || toBytes('15kb'),
+		width: int(width),
+		height: int(height),
+		minWidth: int(minWidth),
+		minHeight: int(minHeight),
+	}
 }
 
-const compress = (file, options, callback) => {
-	const isImage = /^image\//.test(file.type)
-	if (!isImage) {
-		return
+function drawImage(canvas, image) {
+	const ctx = canvas.getContext('2d')
+	ctx.clearRect(0, 0, canvas.width, canvas.height)
+	ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+}
+
+function qCompress(callback, canvas, fileType, maxSize, error, min = 0, max = 1) {
+	console.group('qCompress')
+	const quality = min + (max - min) / 2
+	const threshold = 0.01
+	const delta = max - min
+	console.log('canvas: ', canvas)
+	console.log('fileType: ', fileType)
+	console.log('maxSize: ', maxSize)
+	console.log('error: ', error)
+	console.log('min: ', min)
+	console.log('max: ', max)
+	console.log('delta: ', delta)
+	console.log('quality: ', quality)
+	const handler = blob => {
+		console.group('qCompress handler')
+		console.log('blob: ', blob)
+		blob && console.log('size: ', formatBytes(blob.size))
+		console.groupEnd()
+		if (Math.abs(maxSize - blob.size) <= error || delta <= threshold) {
+			return callback(blob)
+		}
+		if (blob.size > maxSize) {
+			qCompress(callback, canvas, fileType, maxSize, error, min, quality)
+		} else {
+			qCompress(callback, canvas, fileType, maxSize, error, quality, max)
+		}
 	}
+	canvas.toBlob(handler, fileType, quality)
+	console.groupEnd()
+}
+
+function sCompress(callback, img, canvas, fileType, maxSize, error, min, max) {
+	console.group('sCompress')
+	const threshold = 0
+	const delta = max - min
+	const ratio = canvas.width / canvas.height
+	const point = Math.floor(min + (max - min) / 2)
+	if(ratio < 0) {
+		canvas.height = point
+		canvas.width = Math.floor(point * ratio)
+	} else {
+		canvas.width = point
+		canvas.height = Math.floor(point / ratio)
+	}
+	// canvas.width = width
+	// canvas.height = Math.floor(width / ratio)
+	drawImage(canvas, img)
+	console.log('img: ', img)
+	console.log('canvas: ', canvas)
+	console.log('maxSize: ', maxSize)
+	console.log('error: ', error)
+	console.log('min: ', min)
+	console.log('max: ', max)
+	console.log('delta: ', delta)
+	console.log('canvas.width: ', canvas.width)
+	console.log('canvas.height: ', canvas.height)
+	const handler = blob => {
+		console.group('sCompress handler')
+		console.log('blob: ', blob)
+		blob && console.log('size: ', formatBytes(blob.size))
+		console.groupEnd()
+		if (Math.abs(maxSize - blob.size) <= error || delta <= threshold) {
+			return callback(blob)
+		}
+		if (blob.size > maxSize) {
+			sCompress(callback, img, canvas, fileType, maxSize, error, min, point)
+		} else {
+			sCompress(callback, img, canvas, fileType, maxSize, error, point, max)
+		}
+	}
+	canvas.toBlob(handler, fileType)
+	console.groupEnd()
+}
+
+function compressor(file, options, callback) {
 	if (typeof options === 'function') {
 		callback = options
 		options = {}
 	}
-	const exec = (...arg) => {
-		if (!is(callback, 'function')) {
-			return false
-		}
-		return callback.apply(null, arg)
+	const fileType = file.type
+	const accept = /^image\/(jpe?g|png)$/i
+	const exec = data => typeof callback === 'function' && callback(data)
+	if (!Boolean(options) || !accept.test(fileType)) {
+		exec(file)
 	}
-	const defaults = {
-		width: '100%',     // auto or percentage or pixel
-		height: 'auto',    // auto or percentage or pixel
-		quality: 75,       // 0 - 100
-		maxSize: '',       // 1Mb
-		output: 'blob'     // blob or base64
-	}
-	let config
-	if (!options) {
-		config = false
-	} else {
-		config = is(options, 'object') ? Object.assign(defaults, options) : defaults
-	}
-	config = normalizeCompressorConfig(config)
+	const isPng = /^image\/png$/i.test(fileType)
+	const fileName = file.name
+	const lastModified = file.lastModified
 	const reader = new FileReader()
 	reader.onload = function () {
 		const base64 = this.result
-		if (!config) {
-			// TODO 不压缩
-			exec(base64)
-		}
 		const image = new Image()
 		image.onload = function () {
+			const config = getCompressorOptions(this, options)
+			const {maxSize, error, width, height, minWidth, minHeight, minQuality} = config
 			const canvas = document.createElement('canvas')
-			const ctx = canvas.getContext('2d')
 			const buffer = base64ToArrayBuffer(base64)
 			const orientation = getOrientation(buffer)
-			const w0 = image.naturalWidth
-			const h0 = image.naturalHeight
-			const r0 = w0 / h0
-			const sw = config.width
-			const sh = config.height
-			let cvw = sw, cvh = sh
-			if (isPercent(sw)) {
-				cvw = parseFloat(sw) / 100 * w0
-			}
-			if (isPercent(sh)) {
-				cvh = parseFloat(sh) / 100 * h0
-			}
-			if (cvw === 'auto') {
-				cvw = cvh * r0
-			}
-			if (cvh === 'auto') {
-				cvh = cvw / r0
-			}
-			cvw = Math.floor(cvw > w0 ? w0 : cvw)
-			cvh = Math.floor(cvh > sh ? sh : cvh)
-			canvas.width = cvw
-			canvas.height = cvh
-			if (orientation > 0) {
-				fixOrientation(canvas, ctx, orientation)
-			}
-			ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-			if (!config.maxSize) {
-				const args = [file.type]
-				if (/^image\/jpe?g$/i.test(file.type)) {
-					args.push(config.quality / 100)
+			console.log('orientation: ', orientation)
+			console.log(config)
+			const output = blob => {
+				blob.name = fileName
+				blob.lastModified = lastModified
+				if (config.output === 'blob') {
+					exec(blob)
+				} else {
+					blobToBase64(blob, exec)
 				}
-				const newImageBase64 = canvas.toDataURL.apply(null, args);
 			}
-
+			canvas.width = width
+			canvas.height = config.height
+			const smin = width / height < 0 ? minHeight : minWidth
+			if (orientation > 0) {
+				fixOrientation(canvas, orientation)
+			}
+			drawImage(canvas, this)
+			if (isPng) {
+				return sCompress(output, this, canvas, fileType, maxSize, error, smin, width)
+			}
+			if (maxSize) {
+				if (file.size <= error + maxSize) {
+					const blob = new Blob([buffer], {type: fileType})
+					return output(blob)
+				}
+				const fn = blob => {
+					console.group('qCompress after')
+					console.log('blob: ', blob)
+					console.log('size: ', formatBytes(blob.size))
+					console.groupEnd()
+					if (Math.abs(blob.size - maxSize) <= error) {
+						output(blob)
+					} else {
+						sCompress(output, this, canvas, fileType, maxSize, error, smin, width)
+					}
+				}
+				return qCompress(fn, canvas, fileType, maxSize, error, minQuality, 1)
+			}
+			canvas.toBlob(output, fileType, config.quality)
 		}
 		image.src = base64
 	}
-	reader.readAsDataURL()
+	reader.readAsDataURL(file)
 }
 
-function getCompressorOptions(options) {
-	const defaults = {
-		width: '100%',     // auto or percentage or number
-		height: 'auto',    // auto or percentage or number
-		quality: 75,       // 0 - 100
-		maxSize: '',       // 1Mb
-		output: 'base64'     // blob or base64
-	}
-	const conf = Object.assign({}, defaults, options)
-	const pattern = /^\+?((?:\.\d+)|(?:\d+(?:\.\d+)?))\s*\%$/i;
-	const format = val => parseInt(val, 10) || '100%'
-	const parse = value => {
-		const type = typeof value
-		if (type !== 'string') {
-			return format(value)
-		}
-		let val = value.trim()
-		if (pattern.test(val)) {
-			val = parseFloat(val)
-			return val ? val + '%' : '100%'
-		}
-		return val === 'auto' ? val : format(val)
-	}
-	let quality = parse(conf.quality)
-	let output = conf.output
-	if(typeof quality === 'string') {
-		quality = quality === 'auto' ? defaults.quality : parseFloat(quality) / 100
-	}
-	quality = quality > 100 ? 100 : (quality < 0 ? 0 : quality)
-	if (typeof output !== 'string') {
-		output = 'base64'
-	} else {
-		output = output.trim() === 'blob' ? 'blob' : 'base64'
-	}
-	return {
-		quality,
-		output,
-		width: parse(conf.width),
-		height: parse(conf.height),
-		maxSize: toBytes(conf.maxSize) || null
-	}
-}
-
-function setCanvasSize(canvas, options) {
-
-}
-
-function compressToSize(canvas, callback, maxSize, min = 0, max = 1) {
-	const quality = min + (max - min) / 2
-	const handler = blob => {
-		if (quality <= 0.01 || Math.abs(max - min) <= 0.01) {
-			return callback(blob)
-		}
-		if(blob.size > limit) {
-			compress(callback, maxSize, min, quality)
-		} else {
-			compress(callback, maxSize, quality, max)
-		}
-	}
-	canvas.toBlob(handler, 'image/jpeg', quality)
-}
-
-function compressor(file, options, callback) {
-
-}
+export default compressor

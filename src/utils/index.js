@@ -83,3 +83,14 @@ export const copy = (value, deep = false) => {
 	}
 	return null;
 };
+
+
+export const formatBytes = bytes => {
+	if (bytes < 0) {
+		return NaN
+	}
+	const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'BB', 'NB', 'DB']
+	const e = Math.floor(Math.log(bytes) / Math.log(1024))
+	const size = Math.ceil(bytes / Math.pow(1024, e))
+	return e < units.length ? size + units[e] : NaN
+}
