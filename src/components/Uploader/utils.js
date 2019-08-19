@@ -13,6 +13,7 @@ const getPower = unit => {
 }
 
 const toBytes = size => {
+	const base = 1000
 	const reg = /^\s*\+?((?:\.\d+)|(?:\d+(?:\.\d+)?))\s*([a-z]*)\s*$/i;
 	const p = reg.exec(size)
 	if (!p) {
@@ -23,16 +24,17 @@ const toBytes = size => {
 	if (Number.isNaN(value) || value < 0 || power < 0) {
 		return NaN
 	}
-	return Math.ceil(value * Math.pow(1024, power))
+	return Math.ceil(value * Math.pow(base, power))
 }
 
 const formatBytes = bytes => {
 	if (Number.isNaN(parseInt(bytes)) || bytes < 0) {
 		return NaN
 	}
+	const base = 1000
 	const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'BB', 'NB', 'DB']
-	const e = Math.floor(Math.log(bytes) / Math.log(1024))
-	const size = Math.ceil(bytes / Math.pow(1024, e))
+	const e = Math.floor(Math.log(bytes) / Math.log(base))
+	const size = Math.ceil(bytes / Math.pow(base, e))
 	return e < units.length ? size + units[e] : NaN
 }
 
@@ -335,7 +337,12 @@ function compressor(file, options, callback) {
 			}
 			drawImage(canvas, this)
 			if (isPng) {
-				return sCompress(output, this, canvas, fileType, maxSize, error, smin, width)
+				if(canvas.width === image.naturalWidth && canvas.height === image.naturalHeight) {
+					const blob = new Blob([buffer], {type: fileType})
+					return output(blob)
+				} else {
+					return sCompress(output, this, canvas, fileType, maxSize, error, smin, width)
+				}
 			}
 			if (maxSize) {
 				if (file.size <= error + maxSize) {
@@ -350,7 +357,11 @@ function compressor(file, options, callback) {
 					if (Math.abs(blob.size - maxSize) <= error) {
 						output(blob)
 					} else {
-						sCompress(output, this, canvas, fileType, maxSize, error, smin, width)
+						if(canvas.width === image.naturalWidth && canvas.height === image.naturalHeight) {
+							output(blob)
+						} else {
+							sCompress(output, this, canvas, fileType, maxSize, error, smin, width)
+						}
 					}
 				}
 				return qCompress(fn, canvas, fileType, maxSize, error, minQuality, 1)

@@ -51,8 +51,10 @@ export default {
 				const file = this.files[0]
 				console.log('file size: ', formatBytes(file.size))
 				compressor(file, {
+					width: 'auto',
 					output: 'blob',
-					maxSize: '800kb'
+					minQuality: 60,
+					maxSize: '1mb'
 				}, blob => {
 					console.log(blob)
 					console.log('blob size: ', formatBytes(blob.size))
